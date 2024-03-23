@@ -1,1 +1,73 @@
 /* You can add global styles to this file, and also import other style files */
+
+/* Importing Bootstrap SCSS file. */
+@import "bootstrap/scss/bootstrap";
+
+.loader {
+  display: block;
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+}
+
+.side-bar {
+  /* position: relative; */
+  width: 140px;
+  height: 100vh;
+  /* background-color: #050505; */
+}
+.sidebar-main {
+  background: #050505;
+  width: 150px;
+  position: fixed;
+  min-height: 100%;
+  max-height: 100%;
+}
+
+/* .content-header{
+    margin: 15% 0 0 25%;
+  } */
+.content-container {
+  margin: 0 0 0 150px;
+}
+.downlist {
+  position: absolute;
+  bottom: 0%;
+}
+.card-image {
+  border-radius: 50%;
+  width: 5rem;
+  height: 5rem;
+}
+body {
+  background-color: #f4f7fc;
+  font-family: "Open Sans", sans-serif;
+}
+
+.notification {
+  position: fixed;
+  top: 10%;
+  right: 0;
+  transform: translateY(-50%);
+  background-color: #f44336;
+  /* Red background color */
+  color: white;
+  padding: 15px;
+  z-index: 1000;
+  border-radius: 5px 0 0 5px;
+  display: none;
+}
+
+.notification.show {
+  display: block;
+}
+
+.text-ellipse {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+/* .card-body{
+    overflow-y: auto;
+  } */
