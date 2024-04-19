@@ -1,12 +1,13 @@
 <div class="cards">
   <!-- border-start-3  -->
+  @if (employeeData.length > 0) {
   <div
     class="row row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-sm-1 d-flex border border-light"
     id="user-cards"
-    *ngIf="employeeData.length > 0; else nodata"
   >
+    @for (user of employeeData; track $index) {
     <div class="col mb-3">
-      <div class="card text-center" *ngFor="let user of employeeData">
+      <div class="card text-center">
         <div class="card-header">
           <div class="row pt-0 justify-content-between">
             <div class="form-check col-auto">
@@ -54,10 +55,11 @@
         </div>
       </div>
     </div>
+    }
   </div>
-  <ng-template #nodata>
-    <h1>No Data Available</h1>
-  </ng-template>
+  } @else {
+  <h1>No Data Available</h1>
+  }
 
   <!-- Pagination container -->
   <div class="pagintion">
