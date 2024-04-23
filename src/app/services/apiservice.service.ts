@@ -1,14 +1,15 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable } from '@angular/core';
 import { catchError, map } from 'rxjs';
+import { environment } from '../../environments/environment';
 
 @Injectable({
   providedIn: 'root',
 })
-export class ApiserviceService {
-  hosturl = 'https://frontendtest.glitch.me/';
+export class ApiService {
+  hosturl = environment.hosturl;
 
-  constructor(private httpclient: HttpClient) { }
+  constructor(private httpclient: HttpClient) {}
 
   getRecords() {
     const apiurl = this.hosturl + 'employees';
