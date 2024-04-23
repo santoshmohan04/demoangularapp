@@ -1,28 +1,163 @@
 <div class="cards">
+  <ng-template #confirmdelete let-modal>
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h1 class="modal-title fs-5" id="staticBackdropLabel">
+            Confirmation
+          </h1>
+          <button type="button" class="btn-close" aria-label="Close" (click)="modal.dismiss('Cross click')"></button>
+        </div>
+        <div class="modal-body">
+          Are you sure you want to delete the employee details
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" [disabled]="disableDeleteButton"
+            (click)="modal.dismiss('Close click')">
+            Cancel
+          </button>
+          <button type="button" class="btn btn-danger" [disabled]="disableDeleteButton"
+            (click)="singleRecordDelete(singleDeleteID)">
+            Delete
+          </button>
+        </div>
+      </div>
+    </div>
+  </ng-template>
   <!-- border-start-3  -->
-  @if (employeeData.length > 0) {
+  <ng-template #EmployeeModal let-modal>
+    <!-- Add employess model -->
+
+    <!-- <div class="modal-dialog"> -->
+    <div class="modal-content">
+      <div class="modal-header">
+        <h1 class="modal-title fs-5" id="addEmployee">
+          Please enter the employee details below
+        </h1>
+        <button type="button" class="btn-close" (click)="modal.dismiss('cross click')" aria-label="Close"></button>
+      </div>
+      <div class="modal-body">
+        <form id="employee-form" [formGroup]="templateCreationForm">
+          <div class="mb-3 text-center">
+            <label for="add-profile-pic" class="form-label">Profile Picture:</label>
+            <div id="profile-pic-addcontainer" class="position-relative">
+              <img id="profile-pic-preview" class="mt-2 rounded-circle" style="max-width: 100px; max-height: 100px"
+                alt="Profile Picture" [src]="profilePicUrl" />
+              <div id="change-profile-pic" class="position-absolute start-50 translate-middle" style="cursor: pointer">
+                <input type="file" class="form-control visually-hidden" id="add-profile-pic" accept="image/*"
+                  (change)="onFileSelected($event)" />
+                <i class="bi bi-camera-fill fs-4" (click)="triggerFileInput()"></i>
+              </div>
+            </div>
+          </div>
+
+          <div class="mb-3">
+            <label for="firstname" class="col-form-label">First Name:</label>
+            <input type="text" class="form-control" formControlName="firstname"
+              placeholder="Please enter the employee Name"
+              [ngClass]="{'invalid-input': templateCreationForm.get('firstname')?.invalid && templateCreationForm.get('firstname')?.touched}" />
+            <div class="invalid-feedback"
+              *ngIf="templateCreationForm.get('firstname')?.invalid && templateCreationForm.get('firstname')?.touched">
+              Please enter a valid name.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="lastname" class="col-form-label">Last Name:</label>
+            <input type="text" class="form-control" formControlName="lastname" placeholder="Please enter the last name"
+              [ngClass]="{'invalid-input': templateCreationForm.get('lastname')?.invalid && templateCreationForm.get('lastname')?.touched}" />
+            <div class="invalid-feedback"
+              *ngIf="templateCreationForm.get('lastname')?.invalid && templateCreationForm.get('lastname')?.touched">
+              Please enter a valid Surname.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="email" class="col-form-label">Email ID:</label>
+            <input type="email" class="form-control" formControlName="email" placeholder="Please enter the email adress"
+              [ngClass]="{'invalid-input': templateCreationForm.get('email')?.invalid && templateCreationForm.get('email')?.touched}" />
+            <div class="invalid-feedback"
+              *ngIf="templateCreationForm.get('email')?.invalid && templateCreationForm.get('email')?.touched">
+              Please enter a valid Email.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="phone" class="col-form-label">Mobile Number:</label>
+            <input type="tel" class="form-control" formControlName="phone" placeholder="Please enter the Mobile Number"
+              [ngClass]="{'invalid-input': templateCreationForm.get('phone')?.invalid && templateCreationForm.get('phone')?.touched}" />
+            <div class="invalid-feedback"
+              *ngIf="templateCreationForm.get('phone')?.invalid && templateCreationForm.get('phone')?.touched">
+              Please enter a valid Mobile.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="dob" class="col-form-label">DOB:</label>
+            <input type="date" class="form-control" formControlName="dob" placeholder="Please enter your date of bearth"
+              [ngClass]="{'invalid-input': templateCreationForm.get('dob')?.invalid && templateCreationForm.get('dob')?.touched}" />
+            <div class="invalid-feedback"
+              *ngIf="templateCreationForm.get('dob')?.invalid && templateCreationForm.get('dob')?.touched">
+              Please enter a valid DOB.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="salary" class="col-form-label">Salary:</label>
+            <input type="number" class="form-control" formControlName="salary" min="100"
+              placeholder="Please enter the Salary Amount"
+              [ngClass]="{'invalid-input': templateCreationForm.get('salary')?.invalid && templateCreationForm.get('salary')?.touched}" />
+            <div class="invalid-feedback"
+              *ngIf="templateCreationForm.get('salary')?.invalid && templateCreationForm.get('salary')?.touched">
+              Please enter a valid salary amount.
+            </div>
+          </div>
+          <div class="mb-3">
+            <label for="age" class="col-form-label">Age:</label>
+            <input type="number" min="18" max="99" class="form-control" formControlName="age"
+              placeholder="Please enter the Employee Age"
+              [ngClass]="{'invalid-input': templateCreationForm.get('age')?.invalid && templateCreationForm.get('age')?.touched}" />
+            <div class="invalid-feedback"
+              *ngIf="templateCreationForm.get('age')?.invalid && templateCreationForm.get('age')?.touched">
+              Please enter a valid age amount.
+            </div>
+          </div>
+        </form>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" (click)="modal.dismiss('Close click')">
+          Cancel
+        </button>
+        <button type="submit" (click)="updateRecord()" class=" btn btn-primary" [disabled]="
+                      templateCreationForm.invalid">
+          Save
+        </button>
+      </div>
+    </div>
+    <!-- </div> -->
+    <!-- End add employess model -->
+  </ng-template>
+  @if (paginationData.length > 0) {
   <div class="row row-cols-md-2 row-cols-lg-3 row-cols-xl-4 row-cols-sm-1 d-flex border border-light" id="user-cards">
-    @for (user of employeeData; track $index) {
+    @for (user of paginationData; track $index) {
     <div class="col mb-3">
       <div class="card text-center">
         <div class="card-header">
           <div class="row pt-0 justify-content-between">
             <div class="form-check col-auto">
-              <input class="form-check-input" type="checkbox" name="flexRadioDefault" />
+              <input class="form-check-input" type="checkbox" name="flexRadioDefault" [(ngModel)]="user.isChecked"
+                (click)="bulkDelete($event,user.id)" />
             </div>
             <div class="col-auto gap-2">
-              <button type="button" class="btn btn-light p-5px" (click)="setDelete(user.id)">
+              <button type="button" class="btn btn-light p-5px"
+                (click)="opentoggle(EmployeeModal,'EditDetails');setValues(user)">
                 <i class="bi bi-pencil-fill"></i>
               </button>
-              <button type="button" class="btn btn-danger p-5px">
+              <button type="button" class="btn btn-danger p-5px" (click)="opentoggle(confirmdelete
+                ,'SingleDelete');singleDeleteID=user.id;">
                 <i class="bi bi-trash3"></i>
               </button>
             </div>
           </div>
         </div>
         <div class="card-body">
-          <img [src]="'assets/avathar_profile.png'" alt="Profile picture of {{ user.firstName }} {{ user.lastName }}"
-            class="img-fluid card-image" />
+          <img [src]="user.profile_pic||'assets/avathar_profile.png'"
+            alt="Profile picture of {{ user.firstName }} {{ user.lastName }}" class="img-fluid card-image" />
           <h5 class="card-title">{{ user.firstName }} {{ user.lastName }}</h5>
           <div class="card-text">
             <h6 class="text-ellipse" title="{{ user.email }}">
@@ -42,23 +177,11 @@
     </div>
     }
   </div>
+  <mat-paginator #paginator class="demo-paginator" (page)="handlePageEvent($event)" [length]="length"
+    [pageSize]="pageSize" [disabled]="disabled" [showFirstLastButtons]="showFirstLastButtons"
+    [pageSizeOptions]="showPageSizeOptions ? pageSizeOptions : []" [hidePageSize]="hidePageSize" [pageIndex]="pageIndex"
+    aria-label="Select page">
+  </mat-paginator>
   } @else {
   <h1>No Data Available</h1>
   }
-
-  <!-- Pagination container -->
-  <div class="pagintion">
-    <div class="row justify-content-between align-items-center">
-      <div id="pagination" class="col-auto"></div>
-      <div class="col-auto">
-        <label for="itemsPerPageSelect">Items per page:</label>
-        <select aria-label="Default select example" name="itemsPerPageSelect" id="itemsPerPageSelect">
-          <option value="8">8</option>
-          <option value="12">12</option>
-          <option value="16">16</option>
-          <option value="20">20</option>
-        </select>
-      </div>
-    </div>
-  </div>
-</div>

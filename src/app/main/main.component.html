@@ -1,42 +1,24 @@
 <main class="content-container border border-5 pl-5 overflow-hidden">
-  <div
-    class="content-header d-flex mt-3 border border-light bg-white p-2 justify-content-between align-items-center"
-  >
+  <div class="content-header d-flex mt-3 border border-light bg-white p-2 justify-content-between align-items-center">
     <div class="search-bar align-items-center">
       <span><i class="bi bi-search"></i></span>
-      <input type="search" id="searchInput" placeholder="Filter users" />
+      <input type="search" placeholder="Filter users" [(ngModel)]="searchTerm"
+        (input)="employeeList.searchbar(searchTerm)" />
     </div>
-
+    <p [ngClass]="{'d-none':deletebtn}">Selected cards count {{count}}</p>
     <div class="gap-2">
-      <button
-        id="selectAllBtn"
-        class="d-none btn btn-primary"
-        type="button"
-        onclick="appdata.toggleSelectAll()"
-      >
+      <button class="btn btn-primary" type="button" [ngClass]="{'d-none':selectAll}" (click)="toggleSelectAll()">
         Select All
       </button>
-      <button
-        id="deleteBtn"
-        class="d-none btn btn-danger"
-        type="button"
-        data-bs-toggle="modal"
-        data-bs-target="#confirmdelete"
-        onclick="deleteConfirmation()"
-      >
+      <button class="btn btn-danger" type="button" [ngClass]="{'d-none':deletebtn}"
+        (click)=" openModal(true,'confirmdelete')">
         Delete
       </button>
-      <button
-        type="button"
-        class="btn btn-primary"
-        data-bs-toggle="modal"
-        data-bs-target="#EmployeeModal"
-        onclick="add()"
-      >
+      <button type="button" class="btn btn-primary" (click)="openModal(true,'EmployeeModal')">
         New User
       </button>
     </div>
   </div>
   <div class="row m-2 border fst-italic border-light border" id="count"></div>
-  <app-employee-list></app-employee-list>
+  <app-employee-list [showmodel]="[modelState,templateName]" (newItemEvent)="handelModel($event)"></app-employee-list>
 </main>
