@@ -1,5 +1,4 @@
 import {
-  AfterViewInit,
   Component,
   EventEmitter,
   Input,
@@ -31,9 +30,16 @@ import {
 import { LoaderService } from '../services/loader.service';
 import { MatPaginatorModule, PageEvent } from '@angular/material/paginator';
 import { Store } from '@ngrx/store';
-import { Subject, takeUntil } from 'rxjs';
+import { Subject, take, takeUntil } from 'rxjs';
 import * as commonactions from '../store/common.actions';
-import { selectEmployeeDtls } from '../store/common.selectors';
+import {
+  selectEmpPageIndex,
+  selectEmpPageSize,
+  selectEmployeeDtls,
+  selectEmployeeList,
+  selectTotalEmployeeListCount,
+} from '../store/common.selectors';
+import { DatafilterPipe } from '../services/datafilter.pipe';
 
 @Component({
   selector: 'app-employee-list',
@@ -48,29 +54,27 @@ import { selectEmployeeDtls } from '../store/common.selectors';
     NgbAlert,
     ReactiveFormsModule,
     MatPaginatorModule,
+    DatafilterPipe,
   ],
 })
-export class EmployeeListComponent
-  implements OnInit, OnChanges, AfterViewInit, OnDestroy
-{
-  employeeData: Array<any> = [];
-  paginationData: any = [];
+export class EmployeeListComponent implements OnInit, OnDestroy {
+  paginationData = this.store.select(selectEmployeeList);
   modalRef: NgbModalRef | undefined;
   templateCreationForm!: FormGroup;
   closeResult = '';
   singleDeleteID = '';
+  searchdata: string = '';
   disableDeleteButton: boolean = false;
   EmployeeEdit: boolean = false;
   employeeID = '';
-  @Input() public showmodel = [false, ''];
   @ViewChild('EmployeeModal') private EmployeeModal!: TemplateRef<string>;
   @ViewChild('confirmdelete') private confirmdelete!: TemplateRef<string>;
   selectAll: boolean = false;
   bulkDeleteList: any = [];
   @Output() newItemEvent = new EventEmitter();
-  length = 50;
-  pageSize = 8;
-  pageIndex = 0;
+  length = this.store.select(selectTotalEmployeeListCount);
+  pageSize = this.store.select(selectEmpPageSize);
+  pageIndex = this.store.select(selectEmpPageIndex);
   pageSizeOptions = [8, 12, 24, 32, 48];
   destroy$: Subject<boolean> = new Subject<boolean>();
   hidePageSize = false;
@@ -95,7 +99,12 @@ export class EmployeeListComponent
   }
 
   ngOnInit() {
-    this.store.dispatch(commonactions.employeeactions.fetchEmployeeData());
+    this.store.dispatch(
+      commonactions.employeeactions.fetchEmployeeData({
+        pageIndex: 0,
+        pageSize: 8,
+      })
+    );
     this.getRecords();
     this.loader.show();
     this.templateCreationForm = this.fb.group({
@@ -114,37 +123,15 @@ export class EmployeeListComponent
       ], // Age range validation
     });
   }
-  ngOnChanges(changes: SimpleChanges): void {
-    console.log(this.showmodel);
 
-    if (this.showmodel[0]) {
-      const modalRef =
-        this.showmodel[1] === 'EmployeeModal'
-          ? this.EmployeeModal
-          : this.confirmdelete;
-      const mode =
-        this.showmodel[1] === 'EmployeeModal' ? 'AddDetails' : 'BulkDelete';
-      this.opentoggle(modalRef, mode);
-    }
-  }
-  ngAfterViewInit(): void {
-    this.pagination({ pageIndex: this.pageIndex, pageSize: this.pageSize });
-  }
   handlePageEvent(e: PageEvent) {
     this.pageEvent = e || this.pageEvent;
-    this.length = e.length;
-    this.pageSize = e.pageSize;
-    this.pageIndex = e.pageIndex;
-    this.pagination(e);
-  }
-  pagination(event: any) {
-    const startIndex = event.pageIndex * event.pageSize;
-    console.log('start index', startIndex);
-
-    let endIndex = startIndex + event.pageSize;
-    endIndex =
-      this.employeeData.length < endIndex ? this.employeeData.length : endIndex;
-    this.paginationData = this.employeeData.slice(startIndex, endIndex);
+    this.store.dispatch(
+      commonactions.employeeactions.changePaginantionData({
+        pageIndex: e.pageIndex,
+        pageSize: e.pageSize,
+      })
+    );
   }
   setPageSizeOptions(setPageSizeOptionsInput: string) {
     if (setPageSizeOptionsInput) {
@@ -167,18 +154,14 @@ export class EmployeeListComponent
       .select(selectEmployeeDtls)
       .pipe(takeUntil(this.destroy$))
       .subscribe((res) => {
-        if (res.records) {
-          this.employeeData = res.records;
-          this.length = this.employeeData.length;
-          this.pagination({
-            pageIndex: this.pageIndex,
-            pageSize: this.pageSize,
-          });
-        } else if (res.create_res) {
-          this.modalRef?.close('Auto-closed');
+        if (res.create_res) {
+          this.modalService.dismissAll();
           this.templateCreationForm.reset();
           this.profilePicUrl =
             'https://img.freepik.com/free-vector/businessman-character-avatar-isolated_24877-60111.jpg?size=626&ext=jpg';
+        } else if (res.delete_res) {
+          this.singleDeleteID = null;
+          this.modalService.dismissAll();
         } else if (res.error) {
           console.log(res.error);
           this.modalRef?.close('Auto-closed');
@@ -189,41 +172,13 @@ export class EmployeeListComponent
       });
   }
 
-  opentoggle(content: TemplateRef<any>, templateName: string) {
-    this.modalRef = this.modalService.open(content);
-    this.modalRef.result.then(
-      (result: any) => {
-        if (templateName == 'SingleDelete') {
-          console.log(this.singleDeleteID);
-        } else if (templateName == 'EditDetails') {
-          this.templateCreationForm.reset();
-        } else if (templateName == 'AddDetails') {
-          this.showmodel[0] = false;
-          this.newItemEvent.emit({ closeModel: true });
-        } else if (templateName == 'BulkDelete') {
-          this.showmodel[0] = false;
-          this.newItemEvent.emit({ closeModel: true });
-        }
-        this.closeResult = `Closed with: ${result}`;
-        console.log(this.closeResult);
-      },
-      (reason: any) => {
-        if (templateName == 'SingleDelete') {
-          this.singleDeleteID = '';
-        } else if (templateName == 'EditDetails') {
-          this.templateCreationForm.reset();
-        } else if (templateName == 'AddDetails') {
-          this.showmodel[0] = false;
-          this.newItemEvent.emit({ closeModel: true });
-        } else if (templateName == 'BulkDelete') {
-          this.showmodel[0] = false;
-          this.newItemEvent.emit({ closeModel: true });
-        }
-        this.closeResult = `Dismissed ${this.getDismissReason(reason)}`;
-        this.newItemEvent.emit({ closeModel: true });
-        console.log(this.closeResult);
-      }
-    );
+  opentoggle(templateName: string) {
+    if (templateName == 'SingleDelete' || templateName == 'BulkDelete') {
+      this.modalRef = this.modalService.open(this.confirmdelete);
+    } else if (templateName == 'EditDetails' || templateName == 'AddDetails') {
+      this.templateCreationForm.reset();
+      this.modalRef = this.modalService.open(this.EmployeeModal);
+    }
   }
   getDismissReason(reason: any): string {
     switch (reason) {
@@ -236,87 +191,26 @@ export class EmployeeListComponent
     }
   }
 
-  singleRecordDelete(id: any) {
-    this.disableDeleteButton = true;
-    if (this.bulkDeleteList.length > 0) {
-      this.apiservice
-        .deleteAllRecords(this.bulkDeleteList[0], this.bulkDeleteList)
-        .subscribe({
-          next: (res) => {
-            console.log(res);
-            this.getRecords();
-            this.modalRef?.close('Auto-closed');
-            this.disableDeleteButton = false;
-            this.bulkDeleteList = [];
-          },
-          error: (err) => {
-            console.log(err);
-          },
-        });
+  singleRecordDelete() {
+    if (this.singleDeleteID) {
+      let deletePayload = [this.singleDeleteID];
+      this.store.dispatch(
+        commonactions.employeeactions.deleteEmployeeData({
+          payload: deletePayload,
+        })
+      );
     } else {
-      this.apiservice.deleteSingleRecords(id).subscribe({
-        next: (res) => {
-          console.log(res);
-          this.getRecords();
-          this.modalRef?.close('Auto-closed');
-          this.disableDeleteButton = false;
-          this.bulkDeleteList = [];
-        },
-        error: (err) => {
-          console.log(err);
-        },
+      this.paginationData.pipe(take(1)).subscribe((data) => {
+        const deletePayload = data
+          .filter((t) => t.isChecked === true)
+          .map((m) => m.id);
+        this.store.dispatch(
+          commonactions.employeeactions.deleteEmployeeData({
+            payload: deletePayload,
+          })
+        );
       });
     }
-  }
-
-  bulkDelete(event: any, selectedItemsList: Array<string>) {
-    const isChecked = event.target.checked;
-    console.log('selectedItemsList :', selectedItemsList);
-    // this.paginationData.find((obj: any) => obj.id === selectedItemsList)?.isChecked = isChecked;
-    const itemToUpdate = this.paginationData.find(
-      (obj: any) => obj.id === selectedItemsList
-    );
-    if (itemToUpdate) {
-      itemToUpdate.isChecked = isChecked;
-    }
-    console.log(this.paginationData);
-
-    if (isChecked) {
-      this.bulkDeleteList.push(selectedItemsList);
-    } else {
-      this.bulkDeleteList = this.bulkDeleteList.filter(
-        (item: any) => item !== selectedItemsList
-      );
-    }
-
-    if (
-      this.bulkDeleteList.length === this.paginationData.length &&
-      isChecked
-    ) {
-      this.selectAll =
-        this.bulkDeleteList.length === this.paginationData.length;
-    } else if (this.bulkDeleteList.length) {
-      this.selectAll = true;
-    } else {
-      this.selectAll = false;
-    }
-
-    // if (this.bulkDeleteList.length !== this.paginationData.length && isChecked) this.selectAll = true;
-    // else if (this.bulkDeleteList.length === 0 && !isChecked) this.selectAll = false;
-    this.newItemEvent.emit({
-      selectAll: this.selectAll,
-      count: this.bulkDeleteList.length,
-      deletebtn: this.bulkDeleteList.length ? true : false,
-    });
-
-    console.log(
-      event,
-      isChecked,
-      selectedItemsList,
-      this.selectAll,
-      this.bulkDeleteList,
-      this.bulkDeleteList.length ? true : false
-    );
   }
 
   setValues(data: any) {
@@ -378,26 +272,10 @@ export class EmployeeListComponent
       );
     }
   }
-  selectAllCheckBox(checkbox: any) {
-    console.log(checkbox);
-    if (!checkbox) {
-      this.selectAll = false;
-      this.bulkDeleteList = this.paginationData
-        .filter((item: any) => item.id) // Filter to remove items with falsy id values
-        .map((item: any) => item.id);
-    } else {
-      this.selectAll = true;
-      this.bulkDeleteList = [];
-    }
-    this.paginationData.forEach((element: any) => {
-      element.isChecked = !checkbox;
-    });
-    console.log(this.bulkDeleteList);
-    this.newItemEvent.emit({
-      selectAll: this.selectAll,
-      count: this.bulkDeleteList.length,
-      deletebtn: this.bulkDeleteList.length ? true : false,
-    });
+  selectAllCheckBox(checkbox: boolean) {
+    this.store.dispatch(
+      commonactions.employeeactions.selectAllData({ isSelected: checkbox })
+    );
   }
 
   onFileSelected(event: any) {
@@ -423,36 +301,27 @@ export class EmployeeListComponent
     ) as HTMLInputElement;
     fileInput.click();
   }
-  searchbar(event: any) {
-    console.log(event);
 
-    const filter = event.toUpperCase();
-    let found = false;
-    let stable: any = [];
-    this.employeeData.forEach((i, j) => {
-      if (filter && i.employee_name.toUpperCase().indexOf(filter) > -1) {
-        stable.push(i);
-        found = true;
-      }
-    });
-    console.log(stable);
-
-    if (found) {
-      //this.paginationData = stable;
-      this.employeeData = stable;
-      this.length = this.employeeData.length;
-      this.pagination({ pageIndex: 0, pageSize: this.pageSize });
-    } else {
-      if (filter) {
-        console.log('filter');
-
-        this.employeeData = [];
-        this.length = this.employeeData.length;
-        this.pagination({ pageIndex: 0, pageSize: this.pageSize });
-      } else {
-        this.getRecords();
-      }
+  searchbar(data: string) {
+    this.searchdata = data;
+    if (this.searchdata.length > 3) {
+      this.store.dispatch(
+        commonactions.employeeactions.filterEmployeeData({
+          data: this.searchdata,
+        })
+      );
+    } else if (this.searchdata === '') {
+      this.store.dispatch(commonactions.employeeactions.clearFilterData());
     }
+  }
+
+  onCheck(user: any, event: boolean) {
+    this.store.dispatch(
+      commonactions.employeeactions.checkOrUncheckData({
+        data: user,
+        isSelected: event,
+      })
+    );
   }
 
   ngOnDestroy(): void {

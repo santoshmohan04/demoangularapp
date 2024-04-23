@@ -23,20 +23,8 @@ export class ApiService {
     );
   }
 
-  deleteSingleRecords(id: string) {
-    const apiurl = this.hosturl + 'employees/' + id;
-    return this.httpclient.delete(apiurl).pipe(
-      map((res: any) => {
-        return res;
-      }),
-      catchError((error) => {
-        throw new Error(error);
-      })
-    );
-  }
-
-  deleteAllRecords(id: string, body: any) {
-    const apiurl = this.hosturl + 'employees/' + id;
+  deleteRecords(body: any) {
+    const apiurl = this.hosturl + 'employees/' + body[0];
     return this.httpclient.delete(apiurl, { body: body }).pipe(
       map((res: any) => {
         return res;

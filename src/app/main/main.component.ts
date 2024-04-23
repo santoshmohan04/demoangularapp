@@ -1,7 +1,10 @@
-import { Component, ViewChild } from '@angular/core';
+import { Component, OnDestroy, OnInit, ViewChild } from '@angular/core';
 import { EmployeeListComponent } from '../employee-list/employee-list.component';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { Store } from '@ngrx/store';
+import { Subject, takeUntil } from 'rxjs';
+import { selectEmployeeList } from '../store/common.selectors';
 
 @Component({
   selector: 'app-main',
@@ -10,33 +13,42 @@ import { FormsModule } from '@angular/forms';
   styleUrl: './main.component.scss',
   imports: [EmployeeListComponent, CommonModule, FormsModule],
 })
-export class MainComponent {
+export class MainComponent implements OnInit, OnDestroy {
   @ViewChild(EmployeeListComponent) employeeList!: EmployeeListComponent;
   modelState: boolean = false;
   templateName: string | null = '';
   deletebtn: any = true;
-  selectAll: any = true;
+  employeedata = [];
   count: number = 0;
   searchTerm: string = '';
-  constructor() {}
+  destroy$: Subject<boolean> = new Subject<boolean>();
+  constructor(private readonly store: Store) {}
+
+  ngOnInit(): void {
+    this.store
+      .select(selectEmployeeList)
+      .pipe(takeUntil(this.destroy$))
+      .subscribe((res) => {
+        if (res.length > 0) {
+          this.employeedata = res;
+          this.count = res.filter((t) => t.isChecked === true).length;
+        }
+      });
+  }
 
   toggleSelectAll() {
-    this.employeeList.selectAllCheckBox(this.selectAll);
+    if (this.count === this.employeedata.length) {
+      this.employeeList.selectAllCheckBox(false);
+    } else {
+      this.employeeList.selectAllCheckBox(true);
+    }
   }
-  openModal(value: boolean, name: string) {
-    this.modelState = value;
-    this.templateName = name;
+  openModal(name: string) {
+    this.employeeList.opentoggle(name);
   }
-  handelModel(e: any) {
-    console.log(e);
-    e.closeModel ? (this.modelState = e.closeModel) : (this.modelState = false);
-    e.selectAll
-      ? (this.selectAll = !e.selectAll)
-      : (this.selectAll = !e.selectAll);
-    e.deletebtn
-      ? (this.deletebtn = !e.deletebtn)
-      : (this.deletebtn = !e.deletebtn);
-    e.count ? (this.count = e.count) : (this.count = 0);
-    console.log('deletebtn', this.deletebtn);
+
+  ngOnDestroy(): void {
+    this.destroy$.next(true);
+    this.destroy$.unsubscribe();
   }
 }
