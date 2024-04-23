@@ -6,6 +6,7 @@ import * as commonactions from './common.actions';
 import { ApiService } from '../services/apiservice.service';
 import { HttpErrorResponse } from '@angular/common/http';
 import { Store } from '@ngrx/store';
+import * as fromCommon from './common.reducers';
 
 @Injectable()
 export class CommonEffects {
@@ -73,15 +74,6 @@ export class CommonEffects {
     );
   });
 
-  getRecordsOnCreate$ = createEffect(() => {
-    return this.actions$.pipe(
-      ofType(commonactions.employeeactions.createEmployeeDataSuccess),
-      map((action) => {
-        return commonactions.employeeactions.fetchEmployeeData();
-      })
-    );
-  });
-
   updateEmployeeData$ = createEffect(() => {
     return this.actions$.pipe(
       ofType(commonactions.employeeactions.updateEmployeeData),
@@ -108,7 +100,7 @@ export class CommonEffects {
     return this.actions$.pipe(
       ofType(commonactions.employeeactions.deleteEmployeeData),
       exhaustMap((action) =>
-        this.apiservice.deleteSingleRecords(action.payload).pipe(
+        this.apiservice.deleteRecords(action.payload).pipe(
           map((response: any) => {
             return commonactions.employeeactions.deleteEmployeeDataSuccess({
               data: response,
@@ -123,6 +115,22 @@ export class CommonEffects {
           )
         )
       )
+    );
+  });
+
+  getRecordsOnCreate$ = createEffect(() => {
+    return this.actions$.pipe(
+      ofType(
+        commonactions.employeeactions.createEmployeeDataSuccess,
+        commonactions.employeeactions.updateEmployeeDataSuccess,
+        commonactions.employeeactions.deleteEmployeeDataSuccess
+      ),
+      map(() => {
+        return commonactions.employeeactions.fetchEmployeeData({
+          pageIndex: 0,
+          pageSize: 8,
+        });
+      })
     );
   });
 }
